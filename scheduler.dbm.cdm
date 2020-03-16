@@ -1,0 +1,49 @@
+#
+# ==============================================================================
+Def(name: Duration, inherits: Data):
+  Long(name: beg, cardinality: 1, default: -1);
+  Long(name: end, cardinality: 1, default: -1);
+Def(name: AssetUsage, inherits: Data):
+  Referecen(name: asset, cardinality: 0..m, type: Asset);
+  Boolean(name: required, cardinality: 1, default: false);
+# ==============================================================================
+Def(name: BaseObjectType, inherits: DataFacet):
+  String(name: name, cardinality: 1);
+  String(name: description, cardinality: 1);
+  String(name: metadata, cardinality: 1, format: '$ObjectFormat(json)', default: '{}');
+
+# Asset model is used to represent any item needed to run an event including:
+# Movable Equipment (mats, blocks)
+# Stationary Equipment and space (heated room)
+# Personel (teachers)
+Def(name: AssetType, inherits: BaseObjectType,DataModel):
+  Sid(name: id);
+  String(name: type, cardinality: 1, default: GENERIC);
+  Long(name: ammount, cardinality: 1, default: 0);
+
+# Event model is used to describe everything about an event
+Def(name: EventType, inherits: BaseObjectType,DataModel):
+  Sid(name: id);
+  AssetUsage(name: assets, cardinality: 0..m);
+
+# EventInstance model is used to bind Event + AssetAllocation to a time slot
+Def(name: EventInstanceType, inherits: BaseObjectType,DataModel):
+  Sid(name: id);
+  Duration(name: time, cardinality: 1);
+  Reference(name: event, cardinality: 1, type: Event);
+  Reference(name: assets, cardinality: 1..m, default: null):
+    Find(only: '!AssetAllocation:eventInstance'):
+      AssetAllocation(eventInstance: '[:$This.id:]');
+
+# AssetAllocation is used to describe usage of an Asset
+Def(name: AssetAllocationType, inherits: BaseObjectType,DataModel):
+  Sid(name: id);
+  Reference(name: asset, cardinality: 1, type: Asset);
+  Reference(name: eventInstance, cardinality: 1, type: EventInstance);
+
+# ==============================================================================
+Domain(name: SchedulerApp):
+  EventType(name: Event);
+  AssetType(name: Asset);
+  EventInstanceType(name: EventInstance);
+  AssetAllocationType(name: AssetAllocation);
